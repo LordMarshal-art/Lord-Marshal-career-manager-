@@ -1,0 +1,261 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101010">
+<title>LordMarshal Career Manager</title>
+<style>
+:root {
+  --bg:#101010; --panel:#1c1c1c; --gold:#d8ad55;
+  --text:#f5f5f5; --muted:#a7a7a7; --line:#333;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:Arial, sans-serif; line-height:1.5;
+}
+header {
+  padding:26px 20px 22px;
+  background:linear-gradient(140deg,#252016,#101010 70%);
+  border-bottom:1px solid var(--line);
+}
+.brand { color:var(--gold); font-size:12px; letter-spacing:3px; }
+h1 { font-size:28px; margin:8px 0 4px; }
+.subtitle { color:var(--muted); font-size:14px; }
+main { padding:18px; max-width:720px; margin:auto; }
+h2 { font-size:18px; margin:25px 0 12px; }
+.stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.card {
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:13px; padding:14px;
+}
+.stat-number { font-size:25px; color:var(--gold); font-weight:bold; }
+.stat-label { color:var(--muted); font-size:12px; }
+label { display:block; color:var(--muted); font-size:13px; margin:12px 0 5px; }
+input, select, textarea {
+  display:block; width:100%; padding:12px; border-radius:8px;
+  border:1px solid #444; background:#111; color:white; font-size:15px;
+}
+textarea { min-height:80px; resize:vertical; }
+button {
+  padding:12px 15px; border:0; border-radius:8px;
+  background:var(--gold); color:#15120b; font-weight:bold;
+  font-size:14px; cursor:pointer;
+}
+button.secondary { background:#333; color:white; }
+button.delete { background:#482626; color:#fff; padding:7px 10px; }
+.form-card { margin-top:12px; }
+.row { display:flex; gap:8px; margin-top:12px; }
+.row button { flex:1; }
+.task {
+  display:flex; gap:10px; align-items:flex-start;
+  padding:12px 0; border-bottom:1px solid var(--line);
+}
+.task input { width:19px; margin-top:5px; }
+.task-content { flex:1; min-width:0; overflow-wrap:anywhere; }
+.task-title { font-weight:bold; }
+.task-meta { font-size:12px; color:var(--muted); }
+.done .task-title { text-decoration:line-through; color:var(--muted); }
+.empty { color:var(--muted); font-size:14px; padding:12px 0; }
+footer { text-align:center; padding:28px 15px; color:var(--muted); font-size:12px; }
+.notice { color:var(--muted); font-size:12px; margin-top:10px; }
+@media(max-width:380px) {
+  main { padding:12px; }
+  .stats { gap:6px; }
+  .card { padding:10px; }
+  .stat-number { font-size:21px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">INDEPENDENT ARTIST MANAGEMENT</div>
+  <h1>LordMarshal<br>Career Manager</h1>
+  <div class="subtitle">Stay Solid. Build the legacy.</div>
+</header><main>
+  <h2>Career overview</h2>
+  <div class="stats">
+    <div class="card">
+      <div class="stat-number" id="total">0</div>
+      <div class="stat-label">Total tasks</div>
+    </div>
+    <div class="card">
+      <div class="stat-number" id="completed">0</div>
+      <div class="stat-label">Completed</div>
+    </div>
+    <div class="card">
+      <div class="stat-number" id="progress">0%</div>
+      <div class="stat-label">Progress</div>
+    </div>
+  </div>  <h2>Add a career task</h2>
+  <div class="card form-card">
+    <form id="taskForm">
+      <label for="taskTitle">What needs to get done?</label>
+      <input id="taskTitle" maxlength="150" placeholder="e.g. Plan the next single release" required>  <label for="category">Career area</label>
+  <select id="category">
+    <option>Music production</option>
+    <option>Songwriting and recording</option>
+    <option>Marketing and promotion</option>
+    <option>Music videos and visuals</option>
+    <option>Distribution and releases</option>
+    <option>Networking and business</option>
+    <option>Personal development</option>
+  </select>
+
+  <label for="deadline">Target date</label>
+  <input id="deadline" type="date">
+
+  <div class="row">
+    <button type="submit">+ Add task</button>
+    <button type="button" class="secondary" id="clearDone">Clear completed</button>
+  </div>
+</form>
+
+  </div>  <h2>Your career tasks</h2>
+  <div id="taskList"></div>  <h2>Career notes</h2>
+  <div class="card">
+    <label for="notes">Ideas, plans and important reminders</label>
+    <textarea id="notes" maxlength="5000" placeholder="Write your next move here..."></textarea>
+    <div class="row">
+      <button id="saveNotes" type="button">Save notes</button>
+    </div>
+    <div id="noteStatus" class="notice">Notes are stored in this browser on this device.</div>
+  </div>  <h2>Daily mission</h2>
+  <div class="card">
+    <div style="color:var(--gold);font-weight:bold">ONE MOVE FORWARD</div>
+    <p>What is the single most important action you can take today to advance your career?</p>
+    <label for="mission">Today's mission</label>
+    <input id="mission" maxlength="250" placeholder="e.g. Finish the hook for my next single">
+    <button id="saveMission" type="button" style="margin-top:12px">Save mission</button>
+    <div id="missionStatus" class="notice"></div>
+  </div>
+</main><footer>LordMarshal Career Manager · Version 1.0<br>Built for the independent artist journey.</footer><script>
+(function() {
+  const $ = id => document.getElementById(id);
+  const STORAGE_KEY = 'lordmarshal_career_manager_v1';
+  let tasks = [];
+  let notes = '';
+  let mission = '';
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    tasks = Array.isArray(saved.tasks) ? saved.tasks : [];
+    notes = typeof saved.notes === 'string' ? saved.notes : '';
+    mission = typeof saved.mission === 'string' ? saved.mission : '';
+  } catch (e) {}
+
+  function persist() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({tasks, notes, mission}));
+      return true;
+    } catch (e) {
+      alert('Could not save data in this browser. Check your available storage.');
+      return false;
+    }
+  }
+
+  function updateStats() {
+    const completed = tasks.filter(t => t.done).length;
+    $('total').textContent = tasks.length;
+    $('completed').textContent = completed;
+    $('progress').textContent = tasks.length
+      ? Math.round(completed / tasks.length * 100) + '%' : '0%';
+  }
+
+  function renderTasks() {
+    const list = $('taskList');
+    list.replaceChildren();
+
+    if (!tasks.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'No tasks yet. Add your first career task above.';
+      list.appendChild(empty);
+    }
+
+    tasks.forEach(task => {
+      const row = document.createElement('div');
+      row.className = 'task' + (task.done ? ' done' : '');
+
+      const check = document.createElement('input');
+      check.type = 'checkbox';
+      check.checked = !!task.done;
+      check.setAttribute('aria-label', 'Mark task complete');
+      check.addEventListener('change', () => {
+        task.done = check.checked;
+        persist();
+        renderTasks();
+      });
+
+      const content = document.createElement('div');
+      content.className = 'task-content';
+
+      const title = document.createElement('div');
+      title.className = 'task-title';
+      title.textContent = task.title;
+
+      const meta = document.createElement('div');
+      meta.className = 'task-meta';
+      meta.textContent = task.category + (task.date ? ' · Due ' + task.date : '');
+
+      content.append(title, meta);
+
+      const del = document.createElement('button');
+      del.className = 'delete';
+      del.textContent = 'Delete';
+      del.setAttribute('aria-label', 'Delete task');
+      del.addEventListener('click', () => {
+        tasks = tasks.filter(t => t.id !== task.id);
+        persist();
+        renderTasks();
+      });
+
+      row.append(check, content, del);
+      list.appendChild(row);
+    });
+
+    updateStats();
+  }
+
+  $('taskForm').addEventListener('submit', event => {
+    event.preventDefault();
+    const title = $('taskTitle').value.trim();
+    if (!title) return;
+
+    tasks.unshift({
+      id: Date.now().toString() + Math.random().toString(16).slice(2),
+      title,
+      category: $('category').value,
+      date: $('deadline').value,
+      done: false
+    });
+
+    if (persist()) {
+      $('taskForm').reset();
+      renderTasks();
+    }
+  });
+
+  $('clearDone').addEventListener('click', () => {
+    tasks = tasks.filter(t => !t.done);
+    persist();
+    renderTasks();
+  });
+
+  $('notes').value = notes;
+  $('mission').value = mission;
+
+  $('saveNotes').addEventListener('click', () => {
+    notes = $('notes').value;
+    if (persist()) $('noteStatus').textContent = 'Notes saved on this device.';
+  });
+
+  $('saveMission').addEventListener('click', () => {
+    mission = $('mission').value.trim();
+    if (persist()) $('missionStatus').textContent = 'Mission saved on this device.';
+  });
+
+  renderTasks();
+})();
+</script></body>
+</html>
